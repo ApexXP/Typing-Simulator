@@ -9,7 +9,7 @@ Features
 
   Dark/Light Mode: Toggle between dark and light themes for better visibility.
 
-  Realistic Typing: Adds slight random delays between keystrokes to mimic human typing.
+  Realistic Typing: Adds slight random delays between keystrokes and miss-clicks to mimic human typing.
 
   User-Friendly GUI: Built with tkinter, featuring custom-designed buttons and text boxes.
 
