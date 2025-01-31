@@ -329,6 +329,7 @@ class TypingSimulatorApp:
         
         def type_text():
             self.is_typing = True
+            time.sleep(0.5)
             self.stop_typing = False
             
             try:
