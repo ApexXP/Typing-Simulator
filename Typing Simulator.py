@@ -173,7 +173,7 @@ class TypingSimulatorApp:
                                  fg=self.current_theme["fg"])
         self.text_label.pack(pady=5)
         
-        self.text_input = CustomTextBox(main_frame, width=400, height=200,
+        self.text_input = CustomTextBox(main_frame, width=600, height=300,
                                       bg=self.current_theme["entry_bg"],
                                       fg=self.current_theme["fg"])
         self.text_input.pack(pady=10)
@@ -197,6 +197,26 @@ class TypingSimulatorApp:
                                    highlightbackground=self.current_theme["button_bg"])
         self.hotkey_entry.pack(side='left', padx=5)
         self.hotkey_entry.insert(0, "ctrl+q")
+
+        # Pause hotkey input
+        pause_frame = tk.Frame(main_frame, bg=self.current_theme["bg"])
+        pause_frame.pack(fill='x', pady=10)
+
+        self.pause_hotkey_label = tk.Label(pause_frame, text="Pause/Resume hotkey:", 
+                                          font=("Helvetica", 12, "bold"),
+                                          bg=self.current_theme["bg"], 
+                                          fg=self.current_theme["fg"])
+        self.pause_hotkey_label.pack(side='left', padx=5)
+
+        self.pause_hotkey_entry = tk.Entry(pause_frame, width=15, 
+                                          font=("Helvetica", 10),
+                                          relief='flat',
+                                          bg=self.current_theme["entry_bg"],
+                                          fg=self.current_theme["fg"],
+                                          highlightthickness=1,
+                                          highlightbackground=self.current_theme["button_bg"])
+        self.pause_hotkey_entry.pack(side='left', padx=5)
+        self.pause_hotkey_entry.insert(0, "ctrl+p")
 
         # Speed selection
         speed_frame = tk.Frame(main_frame, bg=self.current_theme["bg"])
@@ -232,13 +252,15 @@ class TypingSimulatorApp:
 
         # Variables
         self.hotkey = None
+        self.pause_hotkey = None
         self.text_to_type = ""
         self.typing_speed = 30
         self.is_typing = False
         self.stop_typing = False
+        self.paused = False
 
         # Style the window
-        self.root.geometry("500x600")
+        self.root.geometry("750x800")
         self.root.resizable(False, False)
 
     def toggle_theme(self):
@@ -269,6 +291,8 @@ class TypingSimulatorApp:
                                 fg=self.current_theme["fg"])
         self.hotkey_label.configure(bg=self.current_theme["bg"], 
                                   fg=self.current_theme["fg"])
+        self.pause_hotkey_label.configure(bg=self.current_theme["bg"], 
+                                        fg=self.current_theme["fg"])
         self.speed_label.configure(bg=self.current_theme["bg"], 
                                  fg=self.current_theme["fg"])
         self.status_label.configure(bg=self.current_theme["bg"], 
@@ -278,6 +302,9 @@ class TypingSimulatorApp:
         self.hotkey_entry.configure(bg=self.current_theme["entry_bg"],
                                   fg=self.current_theme["fg"],
                                   highlightbackground=self.current_theme["button_bg"])
+        self.pause_hotkey_entry.configure(bg=self.current_theme["entry_bg"],
+                                        fg=self.current_theme["fg"],
+                                        highlightbackground=self.current_theme["button_bg"])
         
         # Update text box
         self.text_input.bg = self.current_theme["entry_bg"]
@@ -301,6 +328,8 @@ class TypingSimulatorApp:
             # Unregister previous hotkey if it exists
             if self.hotkey:
                 keyboard.remove_hotkey(self.hotkey)
+            if self.pause_hotkey:
+                keyboard.remove_hotkey(self.pause_hotkey)
             
             # Get the new hotkey
             hotkey = self.hotkey_entry.get().strip()
@@ -318,6 +347,11 @@ class TypingSimulatorApp:
             
             # Get text to type
             self.text_to_type = self.text_input.get("1.0", tk.END).strip()
+
+            # Register pause/resume hotkey
+            pause_hotkey_value = self.pause_hotkey_entry.get().strip()
+            if pause_hotkey_value:
+                self.pause_hotkey = keyboard.add_hotkey(pause_hotkey_value, self.toggle_pause)
             
         except Exception as e:
             self.status_label.config(text=f"Error: {str(e)}")
@@ -331,6 +365,7 @@ class TypingSimulatorApp:
             self.is_typing = True
             time.sleep(0.5)
             self.stop_typing = False
+            self.paused = False
             
             try:
                 # Calculate delay between characters based on WPM
@@ -339,6 +374,9 @@ class TypingSimulatorApp:
                 for char in self.text_to_type:
                     if self.stop_typing:
                         break
+                    # If paused, wait until resumed or stopped
+                    while self.paused and not self.stop_typing:
+                        time.sleep(0.1)
                     
                     # 5% chance to make a typo
                     if random.random() < 0.05:
@@ -385,6 +423,17 @@ class TypingSimulatorApp:
     def stop_typing_text(self):
         """Stop the typing process"""
         self.stop_typing = True
+        self.paused = False
+
+    def toggle_pause(self):
+        """Toggle pause/resume while typing"""
+        if not self.is_typing:
+            return
+        self.paused = not self.paused
+        if self.paused:
+            self.status_label.config(text="Status: Paused")
+        else:
+            self.status_label.config(text="Status: Typing...")
 
 if __name__ == "__main__":
     root = tk.Tk()
